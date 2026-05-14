@@ -1,11 +1,3 @@
----
-title: CIFAR-10 Vision AI
-emoji: 👁️
-colorFrom: indigo
-colorTo: pink
-sdk: docker
-app_port: 7860
----
 
 # 🧠 Supervised Learning Project: CIFAR-10 Vision AI
 
