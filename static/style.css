@@ -103,7 +103,7 @@ header {
 }
 
 header h1 {
-    font-size: 3rem;
+    font-size: clamp(2rem, 6vw, 3rem);
     font-weight: 800;
     margin-bottom: 0.5rem;
     letter-spacing: -1px;
@@ -338,13 +338,16 @@ header h1 {
     justify-content: center;
     align-items: center;
     gap: 1rem;
+    flex-wrap: wrap;
 }
 
 .class-name {
-    font-size: 3.5rem;
+    font-size: clamp(2rem, 8vw, 3.5rem);
     font-weight: 800;
     text-transform: capitalize;
-    line-height: 1;
+    line-height: 1.2;
+    text-align: center;
+    word-break: break-word;
 }
 
 .confidence-badge {
@@ -376,7 +379,7 @@ header h1 {
 }
 
 .bar-label {
-    width: 80px;
+    width: 100px;
     text-align: right;
     font-weight: 600;
     font-size: 0.9rem;
