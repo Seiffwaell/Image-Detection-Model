@@ -6,11 +6,34 @@ from PIL import Image
 
 try:
     import tensorflow as tf
-    from tensorflow.keras.models import load_model
     from tensorflow.keras.preprocessing.image import img_to_array
-    from tensorflow.keras.layers import Layer
+    from tensorflow.keras.layers import Layer, BatchNormalization, Dense, Conv2D
     TF_AVAILABLE = True
     
+    # Keras 3 backward compatibility monkey-patches for nested layers (like in TimeDistributed)
+    _orig_bn_from_config = BatchNormalization.from_config
+    @classmethod
+    def _patched_bn_from_config(cls, config):
+        config.pop('renorm', None)
+        config.pop('renorm_clipping', None)
+        config.pop('renorm_momentum', None)
+        return _orig_bn_from_config(config)
+    BatchNormalization.from_config = _patched_bn_from_config
+
+    _orig_dense_from_config = Dense.from_config
+    @classmethod
+    def _patched_dense_from_config(cls, config):
+        config.pop('quantization_config', None)
+        return _orig_dense_from_config(config)
+    Dense.from_config = _patched_dense_from_config
+    
+    _orig_conv2d_from_config = Conv2D.from_config
+    @classmethod
+    def _patched_conv2d_from_config(cls, config):
+        config.pop('quantization_config', None)
+        return _orig_conv2d_from_config(config)
+    Conv2D.from_config = _patched_conv2d_from_config
+
     @tf.keras.utils.register_keras_serializable()
     class AttentionLayer(Layer):
         def __init__(self, **kwargs):
@@ -49,10 +72,10 @@ loaded_models = {}
 
 def get_model(model_key):
     if not TF_AVAILABLE:
-        return None
+        return None, "TensorFlow not available"
         
     if model_key in loaded_models:
-        return loaded_models[model_key]
+        return loaded_models[model_key], None
         
     model_path = MODEL_PATHS.get(model_key)
     if model_path and os.path.exists(model_path):
@@ -60,12 +83,13 @@ def get_model(model_key):
             from tensorflow.keras.models import load_model
             loaded = load_model(model_path)
             loaded_models[model_key] = loaded
-            print(f"Loaded {model_key} model from {model_path}")
-            return loaded
+            print(f"Loaded {model_key} model from {model_path}", flush=True)
+            return loaded, None
         except Exception as e:
-            print(f"Error loading {model_key} model: {e}")
-            return None
-    return None
+            error_msg = f"Exception: {str(e)}"
+            print(f"Error loading {model_key} model: {error_msg}", flush=True)
+            return None, error_msg
+    return None, f"File {model_path} not found on disk"
 
 @app.route('/')
 def index():
@@ -93,7 +117,7 @@ def predict():
         img = img.resize((32, 32))
         
         # Get selected model
-        model = get_model(model_key)
+        model, error_reason = get_model(model_key)
         model_path = MODEL_PATHS.get(model_key, 'unknown')
         
         if model is not None:
@@ -148,7 +172,7 @@ def predict():
                 'confidence': float(random_preds[predicted_class_idx]),
                 'all_predictions': all_preds,
                 'dummy': True,
-                'message': f"{model_name_display} model '{model_path}' not found. Showing dummy prediction. Please train and save it!"
+                'message': f"Failed to load {model_name_display}: {error_reason}"
             })
             
     except Exception as e:
