@@ -36,11 +36,13 @@ app = Flask(__name__)
 # CIFAR-10 classes
 CLASSES = ["airplane", "automobile", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truck"]
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 MODEL_PATHS = {
-    'cnn': "cifar10_model.h5",
-    'rnn': "cifar10_rnn.h5",
-    'gru': "cifar10_gru.h5",
-    'lstm': "cifar10_lstm.h5"
+    'cnn': os.path.join(BASE_DIR, "cifar10_model.h5"),
+    'rnn': os.path.join(BASE_DIR, "cifar10_rnn.h5"),
+    'gru': os.path.join(BASE_DIR, "cifar10_gru.h5"),
+    'lstm': os.path.join(BASE_DIR, "cifar10_lstm.h5")
 }
 
 loaded_models = {}
